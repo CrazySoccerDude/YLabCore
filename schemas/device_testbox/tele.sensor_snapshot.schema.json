@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "device_testbox-telemetry-sensor-snapshot",
+  "description": "TestBox 诊断过程中采集的传感器快照。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "telemetry",
+    "corr_id",
+    "device_id",
+    "timestamp",
+    "sensors"
+  ],
+  "properties": {
+    "telemetry": {
+      "type": "string",
+      "const": "testbox.sensor_snapshot"
+    },
+    "corr_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sensors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

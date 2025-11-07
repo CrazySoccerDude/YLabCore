@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "device_testbox-event-diagnostic-progress",
+  "description": "TestBox 自检过程中的进度事件。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event",
+    "corr_id",
+    "device_id",
+    "timestamp",
+    "progress",
+    "stage"
+  ],
+  "properties": {
+    "event": {
+      "type": "string",
+      "const": "testbox.diagnostic_progress"
+    },
+    "corr_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "stage": {
+      "type": "string",
+      "description": "当前执行的诊断阶段。"
+    },
+    "message": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

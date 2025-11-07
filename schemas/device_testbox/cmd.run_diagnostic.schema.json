@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "device_testbox-command-run-diagnostic",
+  "description": "TestBox 自检命令的消息体。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "command",
+    "corr_id",
+    "device_id",
+    "timestamp",
+    "params"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "testbox.run_diagnostic"
+    },
+    "corr_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timeout_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "duration_s": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 300,
+          "description": "诊断运行时长，默认 30 秒。"
+        },
+        "profile": {
+          "type": "string",
+          "description": "诊断配置名称。"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

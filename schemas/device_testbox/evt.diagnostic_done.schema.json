@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "device_testbox-event-diagnostic-done",
+  "description": "TestBox 自检完成事件。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event",
+    "corr_id",
+    "device_id",
+    "timestamp",
+    "result"
+  ],
+  "properties": {
+    "event": {
+      "type": "string",
+      "const": "testbox.diagnostic_done"
+    },
+    "corr_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "duration_s": {
+      "type": "number",
+      "minimum": 0
+    },
+    "result": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"],
+      "description": "整体诊断结果。"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}
