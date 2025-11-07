@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "device_lcr-command-start-sweep",
+  "description": "LCR 仪器扫频命令消息体。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "command",
+    "corr_id",
+    "device_id",
+    "timestamp",
+    "params"
+  ],
+  "properties": {
+    "command": {
+      "type": "string",
+      "const": "lcr.start_sweep"
+    },
+    "corr_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "跨通道关联 ID。"
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timeout_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "f_start_hz",
+        "f_stop_hz",
+        "points"
+      ],
+      "properties": {
+        "f_start_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "f_stop_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "points": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 16384
+        },
+        "excitation_voltage_v": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "averaging": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "settle_time_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

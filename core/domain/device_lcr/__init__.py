@@ -1,6 +1,6 @@
-"""Domain layer modules grouped by device category and shared models."""
+"""Device LCR 领域模型导出。"""
 
-from .device_lcr.models import (
+from .models import (
     DeviceLCRImpedancePoint,
     DeviceLCRShadow,
     DeviceLCRStartSweepCommand,
@@ -9,7 +9,6 @@ from .device_lcr.models import (
     DeviceLCRSweepParams,
     DeviceLCRSweepProgressEvent,
 )
-from .shared.models import ErrorEvent
 
 __all__ = [
     "DeviceLCRImpedancePoint",
@@ -19,5 +18,4 @@ __all__ = [
     "DeviceLCRSweepDoneEvent",
     "DeviceLCRSweepParams",
     "DeviceLCRSweepProgressEvent",
-    "ErrorEvent",
 ]
