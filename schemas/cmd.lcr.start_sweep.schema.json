@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cmd.lcr.start_sweep",
+  "type": "object",
+  "description": "占位：定义 LCR 扫频命令的参数结构",
+  "properties": {}
+}

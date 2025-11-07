@@ -1,8 +1,4 @@
-"""Unified logging configuration for InstruHub."""
-
-from __future__ import annotations
-
-
-def setup_logging() -> None:  # pragma: no cover - stub
-    """Configure logging sinks and formats."""
-    raise NotImplementedError
+"""
+Unified logging configuration.
+TODO: Configure standard logging and structured event logging.
+"""

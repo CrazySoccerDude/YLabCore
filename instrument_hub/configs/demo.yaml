@@ -1,2 +1,38 @@
-# Placeholder configuration for the InstruHub demo platform.
-# TODO: define transports, instruments, and procedures once modules are ready.
+# InstruHub Demo Configuration (M0)
+# Minimal configuration for testing MQTT bus connectivity
+
+bus:
+  broker_host: localhost
+  broker_port: 1883
+  client_id: instruhub
+
+devices:
+  - id: LCR_1
+    kind: SCPI_LCR
+    channel:
+      type: serial
+      port: loop://  # Loopback for testing
+      baud: 9600
+    options:
+      line_ending: "\r\n"
+      read_terminator: "\n"
+      mock: true
+      default_timeout_ms: 800
+
+procedure:
+  steps:
+    - type: rpc_step
+      device: LCR_1
+      operation: read_idn
+      
+    - type: rpc_step
+      device: LCR_1
+      operation: set_freq
+      params:
+        freq_hz: 1000
+    
+    - type: rpc_step
+      device: LCR_1
+      operation: measure
+      params:
+        freq_hz: 1000

@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "state.shadow",
+  "type": "object",
+  "description": "占位：设备影子模型",
+  "properties": {}
+}
