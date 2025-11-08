@@ -1,8 +1,190 @@
-"""占位：TestBox 设备 Actor，实现简易状态机与自愈。"""
+"""TestBox 设备 Actor，串联命令队列与虚拟驱动。"""
 
 from __future__ import annotations
 
+import asyncio
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, Optional
 
-def create_actor(config: dict) -> None:
-    """TODO: 构造 TestBox 设备实例，并绑定虚拟驱动与队列。"""
-    raise NotImplementedError
+from adapters.drivers.device_testbox import (
+    DeviceTestBoxFakeDriver,
+    DeviceTestBoxRealDriver,
+)
+from adapters.drivers.driver_base import InstrumentDriver
+from core.domain.device_testbox.models import (
+    DeviceTestBoxDoneEvent,
+    DeviceTestBoxProgressEvent,
+    DeviceTestBoxRunCommand,
+    DeviceTestBoxRunParams,
+)
+from core.domain.shared.models import ErrorEvent
+
+from .queues import CommandQueue, TelemetryQueue
+
+
+class DeviceTestBoxActor:
+    """消费命令队列并通过驱动产出遥测事件。"""
+
+    def __init__(
+        self,
+        *,
+        device_id: str,
+        driver: InstrumentDriver,
+        command_queue: CommandQueue,
+        telemetry_queue: TelemetryQueue,
+    ) -> None:
+        self._device_id = device_id
+        self._driver = driver
+        self._command_queue = command_queue
+        self._telemetry_queue = telemetry_queue
+        self._stop_event = asyncio.Event()
+
+    def stop(self) -> None:
+        """请求 Actor 退出循环。"""
+
+        self._stop_event.set()
+
+    @property
+    def device_id(self) -> str:
+        return self._device_id
+
+    async def run(self) -> None:
+        """持续消费命令并推送遥测。"""
+
+        while True:
+            if self._stop_event.is_set() and self._command_queue.empty():
+                break
+            try:
+                command = await asyncio.wait_for(self._command_queue.get_command(), 0.1)
+            except asyncio.TimeoutError:
+                continue
+            try:
+                await self._handle_command(command)
+            finally:
+                self._command_queue.task_done()
+
+    async def _handle_command(self, command: DeviceTestBoxRunCommand) -> None:
+        payload = command.params.model_dump(exclude_none=True)
+        try:
+            self._driver.start_task("run_diagnostic", payload)
+            await self._publish_progress(command)
+            await self._publish_done(command)
+        except Exception as exc:  # noqa: BLE001 - 向遥测队列报告异常
+            await self._telemetry_queue.put_telemetry(
+                ErrorEvent(
+                    device_id=command.device_id,
+                    corr_id=command.corr_id,
+                    code="testbox.actor.error",
+                    message=str(exc),
+                    severity="ERROR",
+                    details={"command": command.model_dump(exclude_none=True)},
+                )
+            )
+
+    async def _publish_progress(self, command: DeviceTestBoxRunCommand) -> None:
+        progress_items = getattr(self._driver, "fetch_progress", None)
+        if progress_items is None or not callable(progress_items):
+            return
+        records: Iterable[Dict[str, Any]] = progress_items()
+        for record in records:
+            await self._telemetry_queue.put_telemetry(
+                DeviceTestBoxProgressEvent(
+                    corr_id=command.corr_id,
+                    device_id=command.device_id,
+                    progress=float(record.get("progress", 0.0)),
+                    stage=str(record.get("stage", "unknown")),
+                    message=record.get("message"),
+                    metadata={
+                        "elapsed_s": record.get("elapsed_s"),
+                        "device_id": command.device_id,
+                    },
+                )
+            )
+
+    async def _publish_done(self, command: DeviceTestBoxRunCommand) -> None:
+        fetch_result = getattr(self._driver, "fetch_result", None)
+        if fetch_result is None or not callable(fetch_result):
+            return
+        result = fetch_result()
+        if result is None:
+            return
+        passed = bool(result.get("passed", False))
+        await self._telemetry_queue.put_telemetry(
+            DeviceTestBoxDoneEvent(
+                corr_id=command.corr_id,
+                device_id=command.device_id,
+                duration_s=float(result.get("duration_s") or 0.0),
+                result="PASS" if passed else "FAIL",
+                summary=result.get("summary"),
+                metadata={
+                    "profile": result.get("profile"),
+                    "device_id": command.device_id,
+                },
+            )
+        )
+
+
+@dataclass(slots=True)
+class DeviceTestBoxRuntime:
+    actor: DeviceTestBoxActor
+    command_queue: CommandQueue
+    telemetry_queue: TelemetryQueue
+    default_command: DeviceTestBoxRunCommand | None = None
+
+
+def _build_driver(config: Dict[str, Any]) -> InstrumentDriver:
+    driver_cfg = config.get("driver", {})
+    driver_type = driver_cfg.get("type", "fake").lower()
+    if driver_type == "fake":
+        return DeviceTestBoxFakeDriver(
+            default_duration_s=float(driver_cfg.get("default_duration_s", 60.0)),
+            stages=list(driver_cfg.get("stages", [])) or None,
+            seed=int(driver_cfg.get("seed", 7)),
+        )
+    if driver_type == "real":
+        return DeviceTestBoxRealDriver()
+    raise ValueError(f"Unsupported driver type: {driver_type}")
+
+
+def _resolve_params(config: Dict[str, Any]) -> DeviceTestBoxRunParams:
+    params_cfg = config.get("default_params", {})
+    if isinstance(params_cfg, DeviceTestBoxRunParams):
+        return params_cfg
+    return DeviceTestBoxRunParams(**params_cfg)
+
+
+def create_actor(config: Optional[Dict[str, Any]] = None) -> DeviceTestBoxRuntime:
+    """构建 TestBox Actor 与其依赖。"""
+
+    cfg = config.copy() if config else {}
+    device_id = cfg.get("device_id", "TESTBOX-001")
+    command_queue = CommandQueue()
+    telemetry_queue = TelemetryQueue()
+    driver = _build_driver(cfg)
+    actor = DeviceTestBoxActor(
+        device_id=device_id,
+        driver=driver,
+        command_queue=command_queue,
+        telemetry_queue=telemetry_queue,
+    )
+
+    default_params = _resolve_params(cfg)
+    cfg.setdefault("default_command", DeviceTestBoxRunCommand(
+        corr_id="demo",
+        device_id=device_id,
+        params=default_params,
+    ))
+    runtime = DeviceTestBoxRuntime(
+        actor=actor,
+        command_queue=command_queue,
+        telemetry_queue=telemetry_queue,
+        default_command=cfg.get("default_command"),
+    )
+    return runtime
+
+
+__all__ = [
+    "DeviceTestBoxActor",
+    "DeviceTestBoxRuntime",
+    "create_actor",
+]

@@ -1,3 +1,1 @@
-"""
-Test suite for InstruHub.
-"""
+"""Test suite for YLabCore components."""
