@@ -9,13 +9,12 @@
 - 双层 SEDA：MQTT 主题承担系统级阶段队列，进程内以 asyncio/线程安全队列细分职责，天然具备背压、限流与弹性扩展能力。
 - 六边形架构确保 Domain、Ports、Adapters 分层清晰，上层编排与底层协议互不侵入。
 
-📈 当前进度（2025-11-07）
-- InstrumentHub 旧实现已彻底移除，仓库以 YLabCore 六边形骨架运行。
-- README 已更新为当前架构说明，并收录愿景、架构图与路线图。
-- 目录骨架完善：`configs/、schemas/、infra/、core/、adapters/、apps/、scripts/、tools/` 等模块全部到位。
-- Device TestBox 虚拟仪器完成领域模型、JSON Schema、`DeviceTestBoxFakeDriver`，并通过 `devices/testbox/apps` Actor/队列串联形成可运行 demo。
-- MQTT 命令/遥测/状态适配器已收敛到 `devices/testbox/drivers/`，新增针对适配器的单元测试，CI 继续运行 `pytest`。
-- LCR 用例的领域模型与 Schema 已建立，占位代码等待驱动与 Actor 闭环。
+📈 当前进度（2025-11-08）
+- 仓库重构为 device-centric 结构：设备包统一归档于 `apps/devices/*`，旧 `adapters/` 与根级 `devices/` 兼容层已移除。
+- TestBox 模块补全领域模型、MQTT 适配器、串口 transport（`loop://` 默认）以及覆盖测试，可作为虚拟仪器实例运行。
+- `pyproject.toml`、README、配置示例等全部更新为新结构，同时在各子目录撰写模块文档，便于后续扩展。
+- CI 仍通过 `uv run pytest` 校验，串口回环、命令/遥测适配器与 Actor 流程均有测试覆盖。
+- LCR 设备暂保留占位，等待硬件到位后再迁移到新的命名空间。
 
 🗒️ 近期待办
 - 联调 Device TestBox MQTT 模式：对接 Mosquitto/EMQX，补充心跳与遗嘱主题。
@@ -152,6 +151,7 @@ tools/
 - MQTT 主题规范：`lab/<site>/<line>/<deviceType>/<deviceId>/<channel>/<verb>`，命令/遥测/事件互不混用。
 
 📝 开发日志
+- 2025-11-08：重构设备包至 `apps.devices.*` 命名空间，移除旧 `adapters/` 与根级 `devices/` 兼容层，引入基于 `loop://` 的串口 Transport，测试用例全部切换新路径并通过 `uv run pytest`。
 - 2025-11-07：修复 demo JSON 序列化；`uv run --no-project python -m apps.devices.testbox.apps.main` 可输出完整诊断进度与完成事件。
 - 2025-11-07：拆分 Device TestBox MQTT 适配器并补充命令/遥测单元测试；`uv sync` 支持安装打包后的 `ylabcore`。
 - 2025-11-07：在本地 Mosquitto 上成功联调 TestBox MQTT 模式，命令→驱动→遥测→状态影子链路闭环。
@@ -170,6 +170,11 @@ tools/
              "host": "localhost",
              "port": 1883,
              "base_topic": "lab/local/line/device_testbox/TB-001"
+          },
+          "transport": {
+             "url": "loop://",
+             "baudrate": 115200,
+             "timeout": 1.0
           }
        }
        ```

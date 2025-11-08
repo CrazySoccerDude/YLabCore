@@ -1,1 +1,12 @@
-# 仪器清单占位。后续为每台设备填写连接方式、能力矩阵和主题前缀。
+# 仪器清单示例。按需复制条目并调整参数。
+
+device_testbox:
+	device_id: "TB-001"
+	mqtt:
+		host: "localhost"
+		port: 1883
+		base_topic: "lab/local/line/device_testbox/TB-001"
+	transport:
+		url: "loop://"
+		baudrate: 115200
+		timeout: 1.0
