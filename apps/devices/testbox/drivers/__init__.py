@@ -1,4 +1,4 @@
-"""Device TestBox 虚拟诊断仪驱动。"""
+"""Device TestBox drivers for fake and real backends."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from datetime import datetime, timezone
 from random import Random
 from typing import Any, Dict, List, Mapping
 
-from .driver_base import InstrumentDriver
+from ...driver_base import InstrumentDriver
 
 
 class DeviceTestBoxFakeDriver(InstrumentDriver):
-    """通过预设阶段模拟诊断流程的虚拟驱动。"""
+    """Virtual diagnostic driver that simulates staged execution."""
 
     def __init__(
         self,
@@ -98,7 +98,7 @@ class DeviceTestBoxFakeDriver(InstrumentDriver):
 
 
 class DeviceTestBoxRealDriver(InstrumentDriver):
-    """真实设备驱动占位，将来结合 transport 与 parser 实现。"""
+    """Placeholder for the real device driver backed by transport + parser."""
 
     def identify(self) -> Mapping[str, Any]:
         raise NotImplementedError
@@ -110,4 +110,7 @@ class DeviceTestBoxRealDriver(InstrumentDriver):
         raise NotImplementedError
 
 
-__all__ = ["DeviceTestBoxFakeDriver", "DeviceTestBoxRealDriver"]
+__all__ = [
+    "DeviceTestBoxFakeDriver",
+    "DeviceTestBoxRealDriver",
+]

@@ -1,4 +1,4 @@
-"""TestBox 命令适配器：订阅 MQTT 命令主题并写入命令队列。"""
+"""MQTT command adapter wiring TestBox command topics to the queue."""
 
 from __future__ import annotations
 
@@ -8,19 +8,18 @@ from asyncio import AbstractEventLoop, create_task
 from dataclasses import dataclass
 from typing import Any, Optional
 
-MQTTClient = Any  # duck-typed at runtime
-MQTTMessage = Any
-
-from apps.device_testbox.queues import CommandQueue
-from core.domain.device_testbox.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
-
+from ..apps.queues import CommandQueue
+from ..domain.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
 
 logger = logging.getLogger(__name__)
+
+MQTTClient = Any
+MQTTMessage = Any
 
 
 @dataclass(slots=True)
 class CommandTopicLayout:
-    """约束 TestBox 命令主题结构。"""
+    """Describe the command topic layout for the device."""
 
     base_topic: str
 
@@ -30,13 +29,13 @@ class CommandTopicLayout:
 
 
 class MQTTCommandAdapter:
-    """负责从 MQTT 命令主题解析并压入命令队列。"""
+    """Subscribe to MQTT command topics and enqueue validated commands."""
 
     def __init__(
         self,
         *,
         client: MQTTClient,
-    loop: AbstractEventLoop,
+        loop: AbstractEventLoop,
         command_queue: CommandQueue,
         topic_layout: CommandTopicLayout,
     ) -> None:
@@ -68,7 +67,7 @@ class MQTTCommandAdapter:
     def _on_message(self, client: MQTTClient, userdata: object, message: MQTTMessage) -> None:
         try:
             data = json.loads(message.payload.decode("utf-8"))
-        except Exception as exc:  # noqa: BLE001 - 记录解析异常
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Invalid JSON on %s: %s", message.topic, exc)
             return
 
@@ -82,7 +81,7 @@ class MQTTCommandAdapter:
     def _parse_command(self, payload: dict) -> Optional[DeviceTestBoxRunCommand]:
         try:
             return DeviceTestBoxRunCommand.model_validate(payload)
-        except Exception as exc:  # noqa: BLE001 - 捕获校验错误
+        except Exception as exc:  # noqa: BLE001
             if "params" not in payload:
                 payload["params"] = DeviceTestBoxRunParams().model_dump(exclude_none=True)
                 try:

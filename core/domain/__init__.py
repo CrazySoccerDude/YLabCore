@@ -1,23 +1,7 @@
-"""Domain layer modules grouped by device category and shared models."""
+"""Domain layer modules grouped by shared primitives."""
 
-from .device_lcr.models import (
-    DeviceLCRImpedancePoint,
-    DeviceLCRShadow,
-    DeviceLCRStartSweepCommand,
-    DeviceLCRState,
-    DeviceLCRSweepDoneEvent,
-    DeviceLCRSweepParams,
-    DeviceLCRSweepProgressEvent,
-)
 from .shared.models import ErrorEvent
 
 __all__ = [
-    "DeviceLCRImpedancePoint",
-    "DeviceLCRShadow",
-    "DeviceLCRStartSweepCommand",
-    "DeviceLCRState",
-    "DeviceLCRSweepDoneEvent",
-    "DeviceLCRSweepParams",
-    "DeviceLCRSweepProgressEvent",
     "ErrorEvent",
 ]

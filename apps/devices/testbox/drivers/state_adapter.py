@@ -1,4 +1,4 @@
-"""TestBox 状态影子适配器：根据遥测事件更新影子。"""
+"""State shadow publisher for Device TestBox telemetry."""
 
 from __future__ import annotations
 
@@ -7,15 +7,14 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from apps.device_testbox.queues import TelemetryMessage
-from core.domain.device_testbox.models import (
+from ..apps.queues import TelemetryMessage
+from ..domain.models import (
     DeviceTestBoxDoneEvent,
     DeviceTestBoxProgressEvent,
     DeviceTestBoxShadow,
     DeviceTestBoxState,
 )
 from core.domain.shared.models import ErrorEvent
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class StateTopicLayout:
 
 
 class StateShadowPublisher:
-    """基于遥测事件构建并发布设备状态影子。"""
+    """Build and publish the device shadow based on telemetry events."""
 
     def __init__(
         self,

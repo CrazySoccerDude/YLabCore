@@ -1,11 +1,11 @@
-"""TestBox 设备内部命令与遥测队列实现。"""
+"""Command and telemetry queues for the Device TestBox pipeline."""
 
 from __future__ import annotations
 
 import asyncio
 from typing import Union
 
-from core.domain.device_testbox.models import (
+from ..domain.models import (
     DeviceTestBoxDoneEvent,
     DeviceTestBoxProgressEvent,
     DeviceTestBoxRunCommand,
@@ -22,7 +22,7 @@ TelemetryMessage = Union[
 
 
 class CommandQueue(asyncio.Queue[DeviceTestBoxRunCommand]):
-    """异步命令队列，包装 put/get 便于类型检查。"""
+    """Asyncio queue tailored for device commands."""
 
     async def put_command(self, command: DeviceTestBoxRunCommand) -> None:
         await self.put(command)
@@ -33,7 +33,7 @@ class CommandQueue(asyncio.Queue[DeviceTestBoxRunCommand]):
 
 
 class TelemetryQueue(asyncio.Queue[TelemetryMessage]):
-    """缓存遥测、进度、错误事件的队列。"""
+    """Asyncio queue buffering telemetry, progress, and error events."""
 
     async def put_telemetry(self, message: TelemetryMessage) -> None:
         await self.put(message)

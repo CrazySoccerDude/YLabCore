@@ -1,17 +1,12 @@
-"""TestBox 设备 Actor，串联命令队列与虚拟驱动。"""
+"""Device TestBox actor binding command queues to drivers."""
 
 from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable
 
-from adapters.drivers.device_testbox import (
-    DeviceTestBoxFakeDriver,
-    DeviceTestBoxRealDriver,
-)
-from adapters.drivers.driver_base import InstrumentDriver
-from core.domain.device_testbox.models import (
+from ..domain.models import (
     DeviceTestBoxDoneEvent,
     DeviceTestBoxProgressEvent,
     DeviceTestBoxRunCommand,
@@ -19,11 +14,14 @@ from core.domain.device_testbox.models import (
 )
 from core.domain.shared.models import ErrorEvent
 
+from ...driver_base import InstrumentDriver
+
+from ..drivers import DeviceTestBoxFakeDriver, DeviceTestBoxRealDriver
 from .queues import CommandQueue, TelemetryQueue
 
 
 class DeviceTestBoxActor:
-    """消费命令队列并通过驱动产出遥测事件。"""
+    """Consume commands and emit telemetry events through the driver."""
 
     def __init__(
         self,
@@ -40,7 +38,7 @@ class DeviceTestBoxActor:
         self._stop_event = asyncio.Event()
 
     def stop(self) -> None:
-        """请求 Actor 退出循环。"""
+        """Request the actor loop to exit."""
 
         self._stop_event.set()
 
@@ -49,7 +47,7 @@ class DeviceTestBoxActor:
         return self._device_id
 
     async def run(self) -> None:
-        """持续消费命令并推送遥测。"""
+        """Continuously consume commands and publish telemetry."""
 
         while True:
             if self._stop_event.is_set() and self._command_queue.empty():
@@ -69,7 +67,7 @@ class DeviceTestBoxActor:
             self._driver.start_task("run_diagnostic", payload)
             await self._publish_progress(command)
             await self._publish_done(command)
-        except Exception as exc:  # noqa: BLE001 - 向遥测队列报告异常
+        except Exception as exc:  # noqa: BLE001
             await self._telemetry_queue.put_telemetry(
                 ErrorEvent(
                     device_id=command.device_id,
@@ -132,7 +130,7 @@ class DeviceTestBoxRuntime:
     default_command: DeviceTestBoxRunCommand | None = None
 
 
-def _build_driver(config: Dict[str, Any]) -> InstrumentDriver:
+def _build_driver(config: Dict[str, Any]):
     driver_cfg = config.get("driver", {})
     driver_type = driver_cfg.get("type", "fake").lower()
     if driver_type == "fake":
@@ -153,8 +151,8 @@ def _resolve_params(config: Dict[str, Any]) -> DeviceTestBoxRunParams:
     return DeviceTestBoxRunParams(**params_cfg)
 
 
-def create_actor(config: Optional[Dict[str, Any]] = None) -> DeviceTestBoxRuntime:
-    """构建 TestBox Actor 与其依赖。"""
+def create_actor(config: Dict[str, Any] | None = None) -> DeviceTestBoxRuntime:
+    """Construct the actor and its queues for the device."""
 
     cfg = config.copy() if config else {}
     device_id = cfg.get("device_id", "TESTBOX-001")
@@ -169,11 +167,14 @@ def create_actor(config: Optional[Dict[str, Any]] = None) -> DeviceTestBoxRuntim
     )
 
     default_params = _resolve_params(cfg)
-    cfg.setdefault("default_command", DeviceTestBoxRunCommand(
-        corr_id="demo",
-        device_id=device_id,
-        params=default_params,
-    ))
+    cfg.setdefault(
+        "default_command",
+        DeviceTestBoxRunCommand(
+            corr_id="demo",
+            device_id=device_id,
+            params=default_params,
+        ),
+    )
     runtime = DeviceTestBoxRuntime(
         actor=actor,
         command_queue=command_queue,

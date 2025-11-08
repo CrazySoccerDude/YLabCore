@@ -7,12 +7,9 @@ from typing import Any, List, Tuple
 
 import pytest
 
-from adapters.device_testbox.telemetry_adapter import (
-    MQTTTelemetryAdapter,
-    TelemetryTopicLayout,
-)
-from apps.device_testbox.queues import TelemetryQueue
-from core.domain.device_testbox.models import DeviceTestBoxDoneEvent, DeviceTestBoxProgressEvent
+from apps.devices.testbox.drivers.telemetry_adapter import MQTTTelemetryAdapter, TelemetryTopicLayout
+from apps.devices.testbox.apps.queues import TelemetryQueue
+from apps.devices.testbox.domain.models import DeviceTestBoxDoneEvent, DeviceTestBoxProgressEvent
 
 
 class _DummyMQTTClient:

@@ -1,4 +1,4 @@
-"""TestBox 遥测适配器：消费遥测队列并发布 MQTT 消息。"""
+"""MQTT telemetry adapter consuming the TestBox telemetry queue."""
 
 from __future__ import annotations
 
@@ -7,18 +7,17 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from apps.device_testbox.queues import TelemetryMessage, TelemetryQueue
-from core.domain.device_testbox.models import (
+from ..apps.queues import TelemetryMessage, TelemetryQueue
+from ..domain.models import (
     DeviceTestBoxDoneEvent,
     DeviceTestBoxProgressEvent,
     DeviceTestBoxSensorSnapshot,
 )
 from core.domain.shared.models import ErrorEvent
 
-
 logger = logging.getLogger(__name__)
 
-MQTTClient = Any  # duck-typed client
+MQTTClient = Any
 
 
 @dataclass(slots=True)
@@ -39,7 +38,7 @@ class TelemetryTopicLayout:
 
 
 class MQTTTelemetryAdapter:
-    """消费 TelemetryQueue 并发布到 MQTT。"""
+    """Publish telemetry events to MQTT topics."""
 
     def __init__(
         self,
@@ -96,7 +95,7 @@ class MQTTTelemetryAdapter:
         raise TypeError(f"Unsupported telemetry message: {type(message)!r}")
 
 
-from .state_adapter import StateShadowPublisher  # noqa: E402  循环依赖延迟导入
+from .state_adapter import StateShadowPublisher  # noqa: E402
 
 
 __all__ = [

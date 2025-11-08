@@ -7,9 +7,9 @@ from typing import List
 
 import pytest
 
-from apps.device_testbox.actor import create_actor
-from apps.device_testbox.queues import TelemetryMessage
-from core.domain.device_testbox.models import (
+from apps.devices.testbox.apps.actor import create_actor
+from apps.devices.testbox.apps.queues import TelemetryMessage
+from apps.devices.testbox.domain.models import (
     DeviceTestBoxDoneEvent,
     DeviceTestBoxProgressEvent,
     DeviceTestBoxRunCommand,

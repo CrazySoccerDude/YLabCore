@@ -13,8 +13,8 @@
 - InstrumentHub 旧实现已彻底移除，仓库以 YLabCore 六边形骨架运行。
 - README 已更新为当前架构说明，并收录愿景、架构图与路线图。
 - 目录骨架完善：`configs/、schemas/、infra/、core/、adapters/、apps/、scripts/、tools/` 等模块全部到位。
-- Device TestBox 虚拟仪器完成领域模型、JSON Schema、`DeviceTestBoxFakeDriver`，并通过 `apps/device_testbox` Actor/队列串联形成可运行 demo。
-- MQTT 命令/遥测/状态适配器已拆分至 `adapters/device_testbox/`，新增针对适配器的单元测试，CI 继续运行 `pytest`。
+- Device TestBox 虚拟仪器完成领域模型、JSON Schema、`DeviceTestBoxFakeDriver`，并通过 `devices/testbox/apps` Actor/队列串联形成可运行 demo。
+- MQTT 命令/遥测/状态适配器已收敛到 `devices/testbox/drivers/`，新增针对适配器的单元测试，CI 继续运行 `pytest`。
 - LCR 用例的领域模型与 Schema 已建立，占位代码等待驱动与 Actor 闭环。
 
 🗒️ 近期待办
@@ -92,18 +92,18 @@ graph LR
 2. **领域与契约**
    - 定义 LCR Actor 的 HSM（INIT/IDLE/BUSY/ERROR 等）。
    - 补全 `core/domain/device_lcr/*`、`core/ports/*` 接口定义。
-   - 在 `schemas/device_lcr/` 下完善命令、遥测、状态影子的 JSON Schema，并同步 Pydantic 模型。
+   - 在 `apps/devices/lcr/schemas/` 下完善命令、遥测、状态影子的 JSON Schema，并同步 Pydantic 模型。
 3. **MQTT & 基础设施**
    - 完成设备级 MQTT 适配器（命令/遥测/状态影子）与连接管理。
    - 在 `infra/docker-compose.yml` 中提供 EMQX/Mosquitto、Influx、Grafana、MinIO 的一键环境。
    - 落地 `configs/*` 与 `.env`，确保配置即代码。
 4. **设备 Actor（LCR meter）**
-   - 实现 `adapters/drivers/device_lcr.py` 中的真实/虚拟驱动。
-   - `adapters/transport/serial_transport.py` 负责串口/USB 通讯，支持重连与读写超时。
-   - `apps/device_lcr/*` 组合成“命令队列→驱动→遥测批处理→状态影子”的内层 SEDA。
+   - 实现 `apps/devices/lcr/drivers/device_lcr.py` 中的真实/虚拟驱动。
+   - `apps/devices/lcr/transport/serial_transport.py` 负责串口/USB 通讯，支持重连与读写超时。
+   - `apps/devices/lcr/*` 组合成“命令队列→驱动→遥测批处理→状态影子”的内层 SEDA。
 5. **编排与用例**
    - 在 `apps/orchestrator/` 中实现流程驱动，支持 Saga、超时、补偿。
-   - 通过 `core/domain/device_lcr/models.py` 提供标准化命令/事件模型。
+   - 通过 `apps/devices/lcr/domain/models.py` 提供标准化命令/事件模型。
    - `apps/persistor/` 完成遥测批量写入 Influx/Timescale。
 6. **可观测性与运维**
    - 接入 Prometheus 指标、Grafana Dashboard，覆盖队列长度、吞吐、错误率。
@@ -120,33 +120,23 @@ graph LR
 📁 当前目录结构（节选）
 ```
 configs/
-schemas/
-   device_lcr/
-   device_testbox/
-   shared/
 core/
    domain/
-      device_lcr/
-      device_testbox/
       shared/
    policies/
    ports/
-adapters/
-   device_testbox/
-      command_adapter.py
-      state_adapter.py
-      telemetry_adapter.py
-   drivers/
-      device_lcr.py
-      device_testbox.py
-   mqtt/
-   parsers/
-   transport/
 apps/
-   device_lcr/
-   device_testbox/
+   devices/
+      testbox/
+         apps/
+         domain/
+         drivers/
+         parsers/
+         schemas/
+         transport/
    orchestrator/
    persistor/
+docs/
 infra/
    docker-compose.yml
    grafana/
@@ -162,12 +152,13 @@ tools/
 - MQTT 主题规范：`lab/<site>/<line>/<deviceType>/<deviceId>/<channel>/<verb>`，命令/遥测/事件互不混用。
 
 📝 开发日志
-- 2025-11-07：修复 demo JSON 序列化；`uv run --no-project python -m apps.device_testbox.main` 可输出完整诊断进度与完成事件。
+- 2025-11-07：修复 demo JSON 序列化；`uv run --no-project python -m apps.devices.testbox.apps.main` 可输出完整诊断进度与完成事件。
 - 2025-11-07：拆分 Device TestBox MQTT 适配器并补充命令/遥测单元测试；`uv sync` 支持安装打包后的 `ylabcore`。
 - 2025-11-07：在本地 Mosquitto 上成功联调 TestBox MQTT 模式，命令→驱动→遥测→状态影子链路闭环。
+- 2025-11-07：迁移 Device TestBox 代码至 `apps.devices.testbox` 包，测试布局同步调整并移除旧路径兼容层。
 
 🚀 运行方式
-- Demo：`uv run python -m apps.device_testbox.main`（无需 MQTT 依赖，直接输出诊断进度与完成事件）。
+- Demo：`uv run python -m apps.devices.testbox.apps.main`（无需 MQTT 依赖，直接输出诊断进度与完成事件）。
 - MQTT 服务：
    1. 确保 `uv sync` 已安装依赖（含 `paho-mqtt`），并启动本地 broker（如 `mosquitto -v`）。
    2. 根据需要准备配置文件（可选）：
@@ -183,7 +174,7 @@ tools/
        }
        ```
 
-   3. 运行 `uv run python -m apps.device_testbox.main --mode mqtt --config path/to/config.json`。
+   3. 运行 `uv run python -m apps.devices.testbox.apps.main --mode mqtt --config path/to/config.json`。
 - 遥测验证：订阅 `lab/local/line/device_testbox/TB-001/#`，可看到命令、遥测与状态影子主题消息。
 
 ⚙️ 环境准备（建议）

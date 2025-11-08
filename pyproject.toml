@@ -15,7 +15,6 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = [
-    "adapters*",
     "apps*",
     "core*",
 ]

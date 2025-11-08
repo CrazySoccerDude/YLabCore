@@ -9,12 +9,9 @@ from typing import Callable, Dict, Tuple
 
 import pytest
 
-from adapters.device_testbox.command_adapter import (
-    CommandTopicLayout,
-    MQTTCommandAdapter,
-)
-from apps.device_testbox.queues import CommandQueue
-from core.domain.device_testbox.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
+from apps.devices.testbox.drivers.command_adapter import CommandTopicLayout, MQTTCommandAdapter
+from apps.devices.testbox.apps.queues import CommandQueue
+from apps.devices.testbox.domain.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
 
 
 @dataclass
@@ -87,7 +84,7 @@ async def test_command_adapter_ignores_invalid_payload() -> None:
 
     adapter.start()
 
-    client.emit(layout.run_diagnostic, {"device_id": "TB-002"})  # missing required fields
+    client.emit(layout.run_diagnostic, {"device_id": "TB-002"})
 
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(queue.get_command(), timeout=0.1)

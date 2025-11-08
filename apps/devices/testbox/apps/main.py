@@ -1,4 +1,4 @@
-"""TestBox 设备适配器入口，提供 demo 与 MQTT 模式。"""
+"""Entry points for the Device TestBox demo and MQTT service."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any, Dict, Iterable
 
-from core.domain.device_testbox.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
+from ..domain.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
 
 from .actor import DeviceTestBoxRuntime, create_actor
 from .queues import TelemetryMessage
@@ -21,7 +21,7 @@ def _default_base_topic(device_id: str) -> str:
 
 
 async def run_async(config: Dict[str, Any] | None = None) -> list[TelemetryMessage]:
-    """运行一次 demo 命令并返回所有遥测事件。"""
+    """Execute a single diagnostic run and return telemetry events."""
 
     runtime = create_actor(config)
     actor_task = asyncio.create_task(runtime.actor.run())
@@ -41,7 +41,7 @@ async def run_async(config: Dict[str, Any] | None = None) -> list[TelemetryMessa
 
 
 def run(config: Dict[str, Any] | None = None, *, dump: bool = True) -> Iterable[TelemetryMessage]:
-    """同步封装，默认打印 demo 遥测。"""
+    """Synchronous helper that prints demo telemetry by default."""
 
     events = asyncio.run(run_async(config))
     if dump:
@@ -51,18 +51,18 @@ def run(config: Dict[str, Any] | None = None, *, dump: bool = True) -> Iterable[
 
 
 async def run_mqtt_async(config: Dict[str, Any] | None = None) -> None:
-    """长期运行的 MQTT 服务模式。"""
+    """MQTT service mode that keeps the actor alive for command handling."""
 
     try:
         import paho.mqtt.client as mqtt  # type: ignore
-    except ImportError as exc:  # noqa: F401 - 提供更友好的提示
+    except ImportError as exc:  # noqa: F401
         raise RuntimeError(
             "paho-mqtt 未安装，无法启动 MQTT 模式。请运行 'uv pip install paho-mqtt' 或启用项目依赖。"
         ) from exc
 
-    from adapters.device_testbox.command_adapter import CommandTopicLayout, MQTTCommandAdapter
-    from adapters.device_testbox.state_adapter import StateShadowPublisher, StateTopicLayout
-    from adapters.device_testbox.telemetry_adapter import MQTTTelemetryAdapter, TelemetryTopicLayout
+    from ..drivers.command_adapter import CommandTopicLayout, MQTTCommandAdapter
+    from ..drivers.state_adapter import StateShadowPublisher, StateTopicLayout
+    from ..drivers.telemetry_adapter import MQTTTelemetryAdapter, TelemetryTopicLayout
 
     cfg = config.copy() if config else {}
     runtime = create_actor(cfg)
