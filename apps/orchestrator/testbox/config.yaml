@@ -1,0 +1,4 @@
+# TestBox 编排专用配置
+mqtt:
+  broker_url: "localhost"
+  broker_port: 1883

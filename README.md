@@ -15,6 +15,7 @@
 - `pyproject.toml`、README、配置示例等全部更新为新结构，同时在各子目录撰写模块文档，便于后续扩展。
 - CI 仍通过 `uv run pytest` 校验，串口回环、命令/遥测适配器与 Actor 流程均有测试覆盖。
 - LCR 设备暂保留占位，等待硬件到位后再迁移到新的命名空间。
+- 新增 `docs/TESTBOX_QUICKSTART.md`，整理 TestBox 的 Demo/MQTT 启动步骤与真实串口替换指南。
 
 🗒️ 近期待办
 - 联调 Device TestBox MQTT 模式：对接 Mosquitto/EMQX，补充心跳与遗嘱主题。

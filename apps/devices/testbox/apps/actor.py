@@ -17,6 +17,7 @@ from core.domain.shared.models import ErrorEvent
 from ...driver_base import InstrumentDriver
 
 from ..drivers import DeviceTestBoxFakeDriver, DeviceTestBoxRealDriver
+from ..transport import SerialTransport
 from .queues import CommandQueue, TelemetryQueue
 
 
@@ -140,8 +141,37 @@ def _build_driver(config: Dict[str, Any]):
             seed=int(driver_cfg.get("seed", 7)),
         )
     if driver_type == "real":
-        return DeviceTestBoxRealDriver()
+        transport_cfg = (
+            driver_cfg.get("transport")
+            or config.get("transport")
+            or {}
+        )
+        transport = SerialTransport(
+            url=transport_cfg.get("url", "loop://"),
+            baudrate=int(transport_cfg.get("baudrate", 115200)),
+            timeout=float(transport_cfg.get("timeout", 1.0)),
+            write_timeout=float(transport_cfg.get("write_timeout", 1.0)),
+            bytesize=transport_cfg.get("bytesize"),
+            parity=transport_cfg.get("parity"),
+            stopbits=transport_cfg.get("stopbits"),
+            xonxoff=_as_bool(transport_cfg.get("xonxoff", False)),
+            rtscts=_as_bool(transport_cfg.get("rtscts", False)),
+            dsrdtr=_as_bool(transport_cfg.get("dsrdtr", False)),
+        )
+        return DeviceTestBoxRealDriver(transport=transport)
     raise ValueError(f"Unsupported driver type: {driver_type}")
+
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    return bool(value)
 
 
 def _resolve_params(config: Dict[str, Any]) -> DeviceTestBoxRunParams:

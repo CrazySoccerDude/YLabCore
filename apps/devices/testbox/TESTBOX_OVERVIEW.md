@@ -9,9 +9,10 @@ TestBox 是 YLabCore 的虚拟诊断仪器实现，用于验证 device-centric �
 | `apps/` | Actor 循环、命令/遥测队列、CLI 入口 | `apps/APPS_OVERVIEW.md` |
 | `domain/` | Pydantic 命令/事件/状态模型 | `domain/DOMAIN_MODELS.md` |
 | `drivers/` | MQTT 命令/遥测/状态适配器与 Fake/Real 驱动 | `drivers/DRIVERS_GUIDE.md` |
-| `parsers/` | 协议封装与解析（SCPI 占位） | `parsers/PARSERS_NOTES.md` |
+| `parsers/` | SCPI 指令构建与响应解析 | `parsers/PARSERS_NOTES.md` |
 | `schemas/` | JSON Schema 契约定义 | `schemas/SCHEMA_REFERENCE.md` |
 | `transport/` | 串口传输封装，默认支持 `loop://` | `transport/TRANSPORT_GUIDE.md` |
+| `docs/` | 快速上手、驱动/传输指南与架构综述 | `docs/TESTBOX_QUICKSTART.md` |
 
 ## 运行方式
 
@@ -19,7 +20,7 @@ TestBox 是 YLabCore 的虚拟诊断仪器实现，用于验证 device-centric �
   ```bash
   uv run python -m apps.devices.testbox.apps.main
   ```
-- MQTT 模式（订阅命令、发布遥测与状态影子）：
+- MQTT 模式（订阅命令、发布遥测、状态影子与心跳）：
   ```bash
   uv run python -m apps.devices.testbox.apps.main --mode mqtt --config configs/devices.yaml
   ```
@@ -27,6 +28,8 @@ TestBox 是 YLabCore 的虚拟诊断仪器实现，用于验证 device-centric �
 ## 配置要点
 
 - `configs/devices.yaml` 提供示例配置，其中 `transport.url` 默认为 `loop://`，可直接用于回环调试。
+- `driver.kind` 可在 `fake` 与 `real` 间切换；真实驱动依赖串口与 SCPI 解析。
+- `heartbeat` 区段演示发布间隔、主题与 Last Will 配置，可按部署环境调整。
 - 如需挂载真实串口，将 `url` 修改为实际端口（例如 `"COM3"`），并根据仪器参数调整 `baudrate`、`timeout` 等。
 
 ## 测试覆盖

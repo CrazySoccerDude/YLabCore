@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from serial import SerialException, serial_for_url
 from serial.serialutil import SerialBase
@@ -15,6 +15,7 @@ class SerialTransport:
     """Manage a serial connection for the TestBox driver.
 
     默认使用 pyserial 的 ``loop://`` URL，实现无需真实仪器的回环调试。
+    通过配置参数可覆盖常见串口特性（波特率、数据位、校验、流控等）。
     """
 
     def __init__(
@@ -24,23 +25,49 @@ class SerialTransport:
         baudrate: int = 115200,
         timeout: float = 1.0,
         write_timeout: float = 1.0,
+        bytesize: int | None = None,
+        parity: str | None = None,
+        stopbits: float | None = None,
+        xonxoff: bool = False,
+        rtscts: bool = False,
+        dsrdtr: bool = False,
+        newline: bytes | str = b"\n",
     ) -> None:
         self.url = url
         self.baudrate = baudrate
         self.timeout = timeout
         self.write_timeout = write_timeout
+        self.bytesize = bytesize
+        self.parity = parity
+        self.stopbits = stopbits
+        self.xonxoff = xonxoff
+        self.rtscts = rtscts
+        self.dsrdtr = dsrdtr
+        self.newline = newline.encode() if isinstance(newline, str) else newline
         self._serial: Optional[SerialBase] = None
+
+    def _open_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            "baudrate": self.baudrate,
+            "timeout": self.timeout,
+            "write_timeout": self.write_timeout,
+            "xonxoff": self.xonxoff,
+            "rtscts": self.rtscts,
+            "dsrdtr": self.dsrdtr,
+        }
+        if self.bytesize is not None:
+            kwargs["bytesize"] = self.bytesize
+        if self.parity is not None:
+            kwargs["parity"] = self.parity
+        if self.stopbits is not None:
+            kwargs["stopbits"] = self.stopbits
+        return kwargs
 
     def open(self) -> None:
         if self._serial and self._serial.is_open:
             return
         try:
-            self._serial = serial_for_url(
-                self.url,
-                baudrate=self.baudrate,
-                timeout=self.timeout,
-                write_timeout=self.write_timeout,
-            )
+            self._serial = serial_for_url(self.url, **self._open_kwargs())
             logger.info("Serial transport opened %s", self.url)
         except SerialException as exc:  # pragma: no cover - pass through
             raise RuntimeError(f"无法打开串口 {self.url}: {exc}") from exc
@@ -55,6 +82,11 @@ class SerialTransport:
     def write(self, data: bytes) -> int:
         serial = self._ensure_open()
         return serial.write(data)
+
+    def write_line(self, text: str) -> int:
+        serial = self._ensure_open()
+        payload = text.encode("utf-8") + self.newline
+        return serial.write(payload)
 
     def read(self, size: int = 1) -> bytes:
         serial = self._ensure_open()

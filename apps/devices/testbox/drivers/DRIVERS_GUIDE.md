@@ -12,10 +12,10 @@
 ## 驱动实现
 
 - `DeviceTestBoxFakeDriver`：默认模拟驱动，通过随机阶段生成进度和结果。
-- `DeviceTestBoxRealDriver`：真实仪器的占位实现，后续将通过串口 transport 与解析层完成。
+- `DeviceTestBoxRealDriver`：串口 + SCPI 协议驱动，利用 `SerialTransport` 写入 `TESTBOX:RUN` 指令，并通过 `parse_response` 解析仪器返回的进度/结果记录。
 
 ## 扩展约定
 
 - 新增协议（HTTP、gRPC 等）时，可在本目录创建新的适配器文件，并于 `main.py` 装配。
-- 实现真实驱动需继承 `InstrumentDriver`，提供 `start_task/abort/fetch_progress/fetch_result` 等接口。
+- 实现真实驱动需继承 `InstrumentDriver`，提供 `start_task/abort/fetch_progress/fetch_result` 等接口；可以注入自定义 transport 或 parser 以适配具体协议。
 - MQTT 适配器的启动/停止必须在 `run_mqtt_async` 中显式调用，避免残留订阅或后台任务。
