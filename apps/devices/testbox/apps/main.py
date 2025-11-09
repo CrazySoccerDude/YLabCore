@@ -1,15 +1,63 @@
 """Entry points for the Device TestBox demo and MQTT service."""
 
+
 from __future__ import annotations
 
+# --- Heartbeat config helpers ---
+from datetime import datetime, timezone
+from typing import Any, Dict, Iterable
+
+def _build_heartbeat_config(
+    *,
+    device_id: str,
+    base_topic: str,
+    mqtt_cfg: Dict[str, Any],
+) -> tuple["HeartbeatConfig" | None, dict[str, Any]]:
+    hb_cfg = mqtt_cfg.get("heartbeat") or {}
+    interval = float(hb_cfg.get("interval", 30.0))
+    if interval <= 0:
+        return None, {}
+
+    topic = hb_cfg.get("topic", f"{base_topic}/hb")
+    payload = dict(hb_cfg.get("payload") or {})
+    payload.setdefault("device_id", device_id)
+    payload.setdefault("status", "online")
+
+    will_payload = dict(hb_cfg.get("will_payload") or {})
+    will_payload.setdefault("device_id", device_id)
+    will_payload.setdefault("status", "offline")
+
+    config = HeartbeatConfig(
+        topic=topic,
+        interval=interval,
+        payload=payload,
+        qos=int(hb_cfg.get("qos", 1)),
+        retain=_as_bool(hb_cfg.get("retain", True)),
+    )
+    return config, will_payload
+
+def _heartbeat_payload(device_id: str, base_payload: dict[str, Any] | None) -> dict[str, Any]:
+    payload = dict(base_payload or {})
+    payload.setdefault("device_id", device_id)
+    payload["timestamp"] = datetime.now(timezone.utc).isoformat()
+    return payload
+
+def _as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "on"}:
+            return True
+        if lowered in {"false", "0", "no", "off"}:
+            return False
+    return bool(value)
 
 import argparse
 import asyncio
 import json
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Any, Dict, Iterable
 
 from ..domain.models import DeviceTestBoxRunCommand, DeviceTestBoxRunParams
 

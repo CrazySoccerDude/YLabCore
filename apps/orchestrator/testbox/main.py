@@ -24,5 +24,4 @@ if __name__ == "__main__":
     job_id = f"job_{int(time.time())}"
     profile_id = "default"
     print(f"[Orchestrator] 下发诊断命令: job_id={job_id}, profile_id={profile_id}")
-    workflow.run_diagnostic(job_id, profile_id)
-    workflow.start()
+    workflow.start(job_id=job_id, profile_id=profile_id)
