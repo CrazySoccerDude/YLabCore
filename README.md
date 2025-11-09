@@ -9,20 +9,18 @@
 - 双层 SEDA：MQTT 主题承担系统级阶段队列，进程内以 asyncio/线程安全队列细分职责，天然具备背压、限流与弹性扩展能力。
 - 六边形架构确保 Domain、Ports、Adapters 分层清晰，上层编排与底层协议互不侵入。
 
-📈 当前进度（2025-11-08）
-- 仓库重构为 device-centric 结构：设备包统一归档于 `apps/devices/*`，旧 `adapters/` 与根级 `devices/` 兼容层已移除。
-- TestBox 模块补全领域模型、MQTT 适配器、串口 transport（`loop://` 默认）以及覆盖测试，可作为虚拟仪器实例运行。
-- `pyproject.toml`、README、配置示例等全部更新为新结构，同时在各子目录撰写模块文档，便于后续扩展。
-- CI 仍通过 `uv run pytest` 校验，串口回环、命令/遥测适配器与 Actor 流程均有测试覆盖。
-- LCR 设备暂保留占位，等待硬件到位后再迁移到新的命名空间。
-- 新增 `docs/TESTBOX_QUICKSTART.md`，整理 TestBox 的 Demo/MQTT 启动步骤与真实串口替换指南。
+📈 当前进度（2025-11-09）
+- 架构重构完成：MQTT 基础架构 (M0) 通过验收，设备中心化结构迁移完成
+- TestBox 设备：完整实现领域模型、MQTT 适配器、串口 transport，支持 Demo/MQTT 双模式运行
+- LCR ADMX2001 设备：串口通信协议探索完成，完整命令参考文档，设备框架搭建就绪
+- 基础设施：`pyproject.toml`、`uv` 环境、测试框架、配置管理全部就绪
+- **详细进度请参考**: `docs/PROJECT_PROGRESS.md`
 
 🗒️ 近期待办
-- 联调 Device TestBox MQTT 模式：对接 Mosquitto/EMQX，补充心跳与遗嘱主题。
-- 细化 `core/domain` 与 `core/ports` 接口定义，使 LCR 与 TestBox 共用一致的命令/事件抽象。
-- 编写领域模型与 JSON Schema 同步校验测试，避免契约漂移。
-- 为 LCR 设备补齐驱动/Actor 与 MQTT 适配器闭环，纳入测试与 CI。
-- 引入格式化与静态分析工具（例如 Ruff、mypy）纳入 CI。
+- 完成 LCR ADMX2001 串口驱动与 MQTT 适配器实现
+- TestBox MQTT 模式生产环境联调 (Mosquitto/EMQX)
+- 核心领域接口标准化，完善 JSON Schema 与 Pydantic 模型
+- 编排引擎与遥测持久化开发 (Saga 模式，InfluxDB 集成)
 
 🧠 目标架构
 ```mermaid
@@ -152,11 +150,12 @@ tools/
 - MQTT 主题规范：`lab/<site>/<line>/<deviceType>/<deviceId>/<channel>/<verb>`，命令/遥测/事件互不混用。
 
 📝 开发日志
-- 2025-11-08：重构设备包至 `apps.devices.*` 命名空间，移除旧 `adapters/` 与根级 `devices/` 兼容层，引入基于 `loop://` 的串口 Transport，测试用例全部切换新路径并通过 `uv run pytest`。
-- 2025-11-07：修复 demo JSON 序列化；`uv run --no-project python -m apps.devices.testbox.apps.main` 可输出完整诊断进度与完成事件。
-- 2025-11-07：拆分 Device TestBox MQTT 适配器并补充命令/遥测单元测试；`uv sync` 支持安装打包后的 `ylabcore`。
-- 2025-11-07：在本地 Mosquitto 上成功联调 TestBox MQTT 模式，命令→驱动→遥测→状态影子链路闭环。
-- 2025-11-07：迁移 Device TestBox 代码至 `apps.devices.testbox` 包，测试布局同步调整并移除旧路径兼容层。
+- 2025-11-09：完成 LCR ADMX2001 串口通信协议探索，创建完整命令参考文档，记录行结束符兼容性测试结果，创建项目整体进度文档 `docs/PROJECT_PROGRESS.md`
+- 2025-11-08：重构设备包至 `apps.devices.*` 命名空间，移除旧 `adapters/` 与根级 `devices/` 兼容层，引入基于 `loop://` 的串口 Transport，测试用例全部切换新路径并通过 `uv run pytest`
+- 2025-11-07：修复 demo JSON 序列化；`uv run --no-project python -m apps.devices.testbox.apps.main` 可输出完整诊断进度与完成事件
+- 2025-11-07：拆分 Device TestBox MQTT 适配器并补充命令/遥测单元测试；`uv sync` 支持安装打包后的 `ylabcore`
+- 2025-11-07：在本地 Mosquitto 上成功联调 TestBox MQTT 模式，命令→驱动→遥测→状态影子链路闭环
+- 2025-11-07：迁移 Device TestBox 代码至 `apps.devices.testbox` 包，测试布局同步调整并移除旧路径兼容层
 
 🚀 运行方式
 - Demo：`uv run python -m apps.devices.testbox.apps.main`（无需 MQTT 依赖，直接输出诊断进度与完成事件）。

@@ -1,0 +1,20 @@
+# LCR_ADMX2001 仪器配置
+
+device_id: "LCR_ADMX2001"
+driver:
+  type: "real"
+  transport:
+    url: "COM4"
+    baudrate: 115200
+    timeout: 1.0
+mqtt:
+  host: "localhost"
+  port: 1883
+  base_topic: "lab/local/line/device_lcr/LCR_ADMX2001"
+  heartbeat:
+    topic: "lab/local/line/device_lcr/LCR_ADMX2001/hb"
+    interval: 30
+    payload:
+      status: "online"
+    will_payload:
+      status: "offline"
