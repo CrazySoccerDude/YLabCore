@@ -9,13 +9,14 @@
 - 双层 SEDA：MQTT 主题承担系统级阶段队列，进程内以 asyncio/线程安全队列细分职责，天然具备背压、限流与弹性扩展能力。
 - 六边形架构确保 Domain、Ports、Adapters 分层清晰，上层编排与底层协议互不侵入。
 
-📈 当前进度（2025-11-08）
+📈 当前进度（2025-11-10）
 - 仓库重构为 device-centric 结构：设备包统一归档于 `apps/devices/*`，旧 `adapters/` 与根级 `devices/` 兼容层已移除。
 - TestBox 模块补全领域模型、MQTT 适配器、串口 transport（`loop://` 默认）以及覆盖测试，可作为虚拟仪器实例运行。
 - `pyproject.toml`、README、配置示例等全部更新为新结构，同时在各子目录撰写模块文档，便于后续扩展。
 - CI 仍通过 `uv run pytest` 校验，串口回环、命令/遥测适配器与 Actor 流程均有测试覆盖。
 - LCR 设备暂保留占位，等待硬件到位后再迁移到新的命名空间。
 - 新增 `docs/TESTBOX_QUICKSTART.md`，整理 TestBox 的 Demo/MQTT 启动步骤与真实串口替换指南。
+- **新增架构文档**：完成与理想架构的对比分析和演进路线图（见下方"架构演进"）。
 
 🗒️ 近期待办
 - 联调 Device TestBox MQTT 模式：对接 Mosquitto/EMQX，补充心跳与遗嘱主题。
@@ -188,6 +189,26 @@ tools/
 - 本地 MQTT Broker：Mosquitto 或 EMQX（使用 `infra/docker-compose.yml` 将提供一键环境）。
 - 数据持久化：InfluxDB 2.x + Grafana（同样由 docker-compose 启动）。
 - 推荐在 Windows 下通过 PowerShell + WSL2 混合环境使用；脚本提供 `.ps1` / `.py` 双版本。
+
+📚 架构演进文档
+
+本项目已完成与"理想架构"（instrument-centric 设计）的全面对比分析：
+
+- **[快速对比总结](docs/DIFFERENCES_SUMMARY.md)** - 5 分钟了解当前实现与理想架构的关键区别
+- **[详细架构对比](docs/ARCHITECTURE_COMPARISON.md)** - 13 个维度的深入分析（消息模型、状态管理、调度器、健康监控等）
+- **[演进路线图](docs/ARCHITECTURE_EVOLUTION.md)** - 3 阶段渐进式重构计划，包含可视化架构图和迁移时间表
+
+**核心发现**：
+- ✅ 当前架构基础扎实（MQTT 通信、Actor 模式、适配器分离）
+- 🎯 建议采用分层架构（Ingress → Scheduler → HSM → Driver）
+- 📋 6-8 周渐进式演进计划，每个阶段保持系统可用
+
+**优先改进方向**：
+1. 🔴 高优先级：添加 Ack 模型、提取状态机（HSM）、分层命令流
+2. 🟡 中优先级：添加调度器、命令路由 API、健康监控
+3. 🟢 低优先级：异步驱动接口、增强基础设施、正式文档
+
+详见上述文档了解完整对比分析和实施路线。
 
 📜 许可证
 
